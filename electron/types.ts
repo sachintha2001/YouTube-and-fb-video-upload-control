@@ -96,6 +96,8 @@ export interface JobTarget {
   id: number;
   jobId: string;
   platform: Platform;
+  targetAccountId: string | null;
+  targetAccountName: string | null;
   status: TargetStatus;
   remotePostId: string | null;
   remoteUrl: string | null;

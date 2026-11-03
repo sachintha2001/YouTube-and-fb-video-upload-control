@@ -130,7 +130,11 @@ export const HistoryTable: React.FC<HistoryTableProps> = ({
                           <div key={target.id} className="text-xs">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="font-medium capitalize text-slate-200">
-                                {target.platform}:
+                                {target.platform}
+                                {target.targetAccountName
+                                  ? ` (${target.targetAccountName})`
+                                  : ''}
+                                :
                               </span>
 
                               {target.status === 'completed' && target.remoteUrl ? (

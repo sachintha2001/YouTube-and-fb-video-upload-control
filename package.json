@@ -12,9 +12,9 @@
     "dev:electron": "wait-on tcp:5173 file:dist-electron/main.js && cross-env NODE_ENV=development ELECTRON_RUN_AS_NODE= electron .",
     "dev": "npm run build:electron && concurrently -k -n RENDERER,MAIN_TSC,ELECTRON \"npm run dev:renderer\" \"npm run watch:electron\" \"npm run dev:electron\"",
     "build": "tsc -p tsconfig.json --noEmit && vite build && npm run build:electron",
-    "dist:mac": "npm run build && electron-builder --mac",
-    "dist:win": "npm run build && electron-builder --win",
-    "dist": "npm run build && electron-builder"
+    "dist:mac": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
+    "dist:win": "npm run build && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64",
+    "dist": "npm run dist:mac && cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win --x64"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
@@ -43,11 +43,15 @@
   "build": {
     "appId": "com.personal.socialstreamstudio",
     "productName": "SocialStream Studio",
+    "directories": {
+      "output": "release"
+    },
     "files": [
       "dist/**/*",
       "dist-electron/**/*"
     ],
     "mac": {
+      "icon": "build/icon.png",
       "category": "public.app-category.video",
       "target": [
         "dmg",
@@ -55,8 +59,10 @@
       ]
     },
     "win": {
+      "icon": "build/icon.png",
+      "signAndEditExecutable": false,
       "target": [
-        "nsis"
+        "zip"
       ]
     },
     "nsis": {

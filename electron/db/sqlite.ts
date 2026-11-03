@@ -28,11 +28,18 @@ const { DatabaseSync } = require('node:sqlite') as {
   DatabaseSync: new (location: string) => NativeDatabaseSync;
 };
 
+export interface CreateJobTargetInput {
+  platform: Platform;
+  targetAccountId?: string | null;
+  targetAccountName?: string | null;
+}
+
 export interface CreateJobRecordInput {
   title: string;
   description: string;
   tags: string[];
   platforms: Platform[];
+  targetAccounts?: Partial<Record<Platform, { id: string | null; name: string | null }>>;
   youtubePrivacy: YouTubePrivacy;
   mediaPath: string | null;
   mediaFileName: string | null;
@@ -78,6 +85,8 @@ export class SqliteRepository {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         job_id TEXT NOT NULL,
         platform TEXT NOT NULL,
+        target_account_id TEXT,
+        target_account_name TEXT,
         status TEXT NOT NULL DEFAULT 'pending',
         remote_post_id TEXT,
         remote_url TEXT,
@@ -96,6 +105,18 @@ export class SqliteRepository {
       CREATE INDEX IF NOT EXISTS idx_targets_job_id
         ON job_targets (job_id);
     `);
+
+    // Safe schema migration for existing databases created before target_account columns
+    const columns = this.db.prepare(`PRAGMA table_info(job_targets)`).all() as Array<{
+      name: string;
+    }>;
+    const colNames = new Set(columns.map((c) => c.name));
+    if (!colNames.has('target_account_id')) {
+      this.db.exec(`ALTER TABLE job_targets ADD COLUMN target_account_id TEXT`);
+    }
+    if (!colNames.has('target_account_name')) {
+      this.db.exec(`ALTER TABLE job_targets ADD COLUMN target_account_name TEXT`);
+    }
   }
 
   /**
@@ -174,12 +195,20 @@ export class SqliteRepository {
         );
 
       const insertTarget = this.db.prepare(
-        `INSERT INTO job_targets (job_id, platform, status, total_bytes)
-         VALUES (?, ?, 'pending', ?)`
+        `INSERT INTO job_targets (
+           job_id, platform, target_account_id, target_account_name, status, total_bytes
+         ) VALUES (?, ?, ?, ?, 'pending', ?)`
       );
 
       for (const platform of uniquePlatforms) {
-        insertTarget.run(id, platform, input.mediaSizeBytes);
+        const acct = input.targetAccounts?.[platform];
+        insertTarget.run(
+          id,
+          platform,
+          acct?.id ?? null,
+          acct?.name ?? null,
+          input.mediaSizeBytes
+        );
       }
 
       this.db.exec('COMMIT');
@@ -455,6 +484,8 @@ export class SqliteRepository {
       id: Number(row.id),
       jobId: String(row.job_id),
       platform: row.platform as Platform,
+      targetAccountId: row.target_account_id ? String(row.target_account_id) : null,
+      targetAccountName: row.target_account_name ? String(row.target_account_name) : null,
       status: row.status as TargetStatus,
       remotePostId: row.remote_post_id ? String(row.remote_post_id) : null,
       remoteUrl: row.remote_url ? String(row.remote_url) : null,

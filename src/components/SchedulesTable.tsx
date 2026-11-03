@@ -113,6 +113,7 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                               />
                             )}
                             {target.platform}
+                            {target.targetAccountName ? ` • ${target.targetAccountName}` : ''}
                           </span>
                         ))}
                       </div>

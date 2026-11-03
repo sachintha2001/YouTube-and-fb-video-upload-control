@@ -165,7 +165,11 @@ export class OAuthManager {
       const server = http.createServer((req, res) => {
         try {
           const reqUrl = new URL(req.url || '/', `http://localhost:${params.port}`);
-          if (reqUrl.pathname !== params.expectedPathname) {
+          const isRootCallback =
+            reqUrl.pathname === '/' &&
+            (reqUrl.searchParams.has('code') || reqUrl.searchParams.has('error'));
+
+          if (reqUrl.pathname !== params.expectedPathname && !isRootCallback) {
             res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
             res.end('Not Found');
             return;
@@ -444,15 +448,24 @@ export class OAuthManager {
     return this.vault.getSafeAccountsSummary();
   }
 
-  public async getValidGoogleAccessToken(): Promise<string> {
+  public async getValidGoogleAccessToken(targetChannelId?: string | null): Promise<string> {
     const stored = this.vault.getGoogleAuth();
     if (!stored) {
       throw new Error('Google / YouTube account is not connected.');
     }
 
+    const matchedChannel = targetChannelId
+      ? (stored.channels || []).find((c) => c.id === targetChannelId)
+      : (stored.channels || []).find((c) => c.id === stored.channelId);
+
+    const activeAccessToken = matchedChannel?.accessToken || stored.accessToken;
+    const activeRefreshToken = matchedChannel?.refreshToken || stored.refreshToken;
+    const activeExpiresAt = matchedChannel?.expiresAt || stored.expiresAt;
+    const effectiveChannelId = matchedChannel?.id || stored.channelId;
+
     // Refresh proactively if expiring within 2 minutes
-    if (Date.now() < stored.expiresAt - 120_000) {
-      return stored.accessToken;
+    if (Date.now() < activeExpiresAt - 120_000) {
+      return activeAccessToken;
     }
 
     const cfg = this.vault.getEffectiveConfig();
@@ -462,7 +475,7 @@ export class OAuthManager {
 
     const refreshParams = new URLSearchParams({
       client_id: cfg.googleClientId,
-      refresh_token: stored.refreshToken,
+      refresh_token: activeRefreshToken,
       grant_type: 'refresh_token',
     });
     if (cfg.googleClientSecret) {
@@ -490,16 +503,19 @@ export class OAuthManager {
     }
 
     const refreshedAccessToken = json.access_token;
-    const refreshedRefreshToken = json.refresh_token || stored.refreshToken;
+    const refreshedRefreshToken = json.refresh_token || activeRefreshToken;
     const refreshedExpiresAt = Date.now() + Number(json.expires_in ?? 3600) * 1000;
 
     const updated: StoredGoogleAuth = {
       ...stored,
-      accessToken: refreshedAccessToken,
-      refreshToken: refreshedRefreshToken,
-      expiresAt: refreshedExpiresAt,
+      accessToken:
+        effectiveChannelId === stored.channelId ? refreshedAccessToken : stored.accessToken,
+      refreshToken:
+        effectiveChannelId === stored.channelId ? refreshedRefreshToken : stored.refreshToken,
+      expiresAt:
+        effectiveChannelId === stored.channelId ? refreshedExpiresAt : stored.expiresAt,
       channels: (stored.channels || []).map((c) =>
-        c.id === stored.channelId
+        c.id === effectiveChannelId
           ? {
               ...c,
               accessToken: refreshedAccessToken,
@@ -511,7 +527,7 @@ export class OAuthManager {
     };
 
     this.vault.setGoogleAuth(updated);
-    return updated.accessToken;
+    return refreshedAccessToken;
   }
 
   public async disconnectGoogle(): Promise<ConnectedAccountsState> {
@@ -662,7 +678,7 @@ export class OAuthManager {
     return this.vault.getSafeAccountsSummary();
   }
 
-  public getSelectedFacebookPageCredentials(): {
+  public getSelectedFacebookPageCredentials(targetPageId?: string | null): {
     pageId: string;
     pageName: string;
     pageAccessToken: string;
@@ -677,7 +693,10 @@ export class OAuthManager {
       );
     }
 
-    const page = fb.pages.find((p) => p.id === fb.selectedPageId) ?? fb.pages[0];
+    const page =
+      (targetPageId ? fb.pages.find((p) => p.id === targetPageId) : undefined) ??
+      fb.pages.find((p) => p.id === fb.selectedPageId) ??
+      fb.pages[0];
     return {
       pageId: page.id,
       pageName: page.name,

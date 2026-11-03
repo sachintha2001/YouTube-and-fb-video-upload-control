@@ -256,6 +256,16 @@ function registerIpcHandlers(): void {
       description,
       tags: (payload.tags || []).map((t) => t.trim()).filter(Boolean),
       platforms: payload.platforms,
+      targetAccounts: {
+        youtube: {
+          id: accounts.google.channelId ?? null,
+          name: accounts.google.channelTitle ?? null,
+        },
+        facebook: {
+          id: accounts.facebook.selectedPageId ?? null,
+          name: accounts.facebook.selectedPageName ?? null,
+        },
+      },
       youtubePrivacy: payload.youtubePrivacy || 'private',
       mediaPath: mediaInfo?.filePath ?? null,
       mediaFileName: mediaInfo?.fileName ?? null,

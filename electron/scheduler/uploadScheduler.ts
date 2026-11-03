@@ -140,7 +140,7 @@ export class UploadScheduler {
       }
 
       for (const target of pendingTargets) {
-        await this.executePlatformTarget(job, target.platform);
+        await this.executePlatformTarget(job, target.platform, target.targetAccountId);
       }
 
       const finalJob = this.repo.getJobById(jobId);
@@ -169,7 +169,11 @@ export class UploadScheduler {
     }
   }
 
-  private async executePlatformTarget(job: UploadJob, platform: Platform): Promise<void> {
+  private async executePlatformTarget(
+    job: UploadJob,
+    platform: Platform,
+    targetAccountId: string | null
+  ): Promise<void> {
     const totalBytes = Math.max(job.mediaSizeBytes, 1);
     this.repo.markTargetUploading(job.id, platform, totalBytes);
     this.emitJobsUpdated();
@@ -207,7 +211,7 @@ export class UploadScheduler {
           throw new Error('YouTube Data API v3 requires a local video file.');
         }
 
-        const accessToken = await this.oauth.getValidGoogleAccessToken();
+        const accessToken = await this.oauth.getValidGoogleAccessToken(targetAccountId);
         const result = await uploadVideoToYouTubeResumable({
           accessToken,
           filePath: job.mediaPath,
@@ -227,7 +231,7 @@ export class UploadScheduler {
           result.totalBytes
         );
       } else if (platform === 'facebook') {
-        const fbCreds = this.oauth.getSelectedFacebookPageCredentials();
+        const fbCreds = this.oauth.getSelectedFacebookPageCredentials(targetAccountId);
         const result = await publishToFacebookPage({
           pageId: fbCreds.pageId,
           pageAccessToken: fbCreds.pageAccessToken,
