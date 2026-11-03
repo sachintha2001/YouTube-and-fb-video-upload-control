@@ -315,7 +315,7 @@ export class OAuthManager {
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('scope', scopes.join(' '));
     authUrl.searchParams.set('access_type', 'offline');
-    authUrl.searchParams.set('prompt', 'consent');
+    authUrl.searchParams.set('prompt', 'select_account consent');
     authUrl.searchParams.set('include_granted_scopes', 'true');
     authUrl.searchParams.set('state', state);
     authUrl.searchParams.set('code_challenge', codeChallenge);
@@ -417,18 +417,30 @@ export class OAuthManager {
       }
     }
 
-    const storedRecord: StoredGoogleAuth = {
-      accessToken,
-      refreshToken,
-      expiresAt,
-      email,
-      channelId,
-      channelTitle,
-      avatarUrl,
-      channels,
-    };
-
-    this.vault.setGoogleAuth(storedRecord);
+    if (channels.length > 0) {
+      for (const ch of channels) {
+        this.vault.upsertGoogleChannel({
+          id: ch.id,
+          title: ch.title,
+          customUrl: ch.customUrl,
+          avatarUrl: ch.avatarUrl || avatarUrl,
+          email,
+          accessToken,
+          refreshToken,
+          expiresAt,
+        });
+      }
+    } else {
+      this.vault.upsertGoogleChannel({
+        id: email || 'default-youtube-channel',
+        title: email ? `YouTube (${email})` : 'YouTube Channel',
+        avatarUrl,
+        email,
+        accessToken,
+        refreshToken,
+        expiresAt,
+      });
+    }
     return this.vault.getSafeAccountsSummary();
   }
 
@@ -477,11 +489,25 @@ export class OAuthManager {
       );
     }
 
+    const refreshedAccessToken = json.access_token;
+    const refreshedRefreshToken = json.refresh_token || stored.refreshToken;
+    const refreshedExpiresAt = Date.now() + Number(json.expires_in ?? 3600) * 1000;
+
     const updated: StoredGoogleAuth = {
       ...stored,
-      accessToken: json.access_token,
-      refreshToken: json.refresh_token || stored.refreshToken,
-      expiresAt: Date.now() + Number(json.expires_in ?? 3600) * 1000,
+      accessToken: refreshedAccessToken,
+      refreshToken: refreshedRefreshToken,
+      expiresAt: refreshedExpiresAt,
+      channels: (stored.channels || []).map((c) =>
+        c.id === stored.channelId
+          ? {
+              ...c,
+              accessToken: refreshedAccessToken,
+              refreshToken: refreshedRefreshToken,
+              expiresAt: refreshedExpiresAt,
+            }
+          : c
+      ),
     };
 
     this.vault.setGoogleAuth(updated);

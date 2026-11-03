@@ -125,7 +125,7 @@ export const AccountsBar: React.FC<AccountsBarProps> = ({
 
               {accounts.google.connected ? (
                 <div className="mt-1 flex flex-wrap items-center gap-2">
-                  {accounts.google.channels && accounts.google.channels.length > 1 ? (
+                  {accounts.google.channels && accounts.google.channels.length > 0 ? (
                     <div className="flex items-center gap-1.5">
                       <label htmlFor={ytChannelSelectId} className="text-xs text-slate-400">
                         Channel:
@@ -163,17 +163,27 @@ export const AccountsBar: React.FC<AccountsBarProps> = ({
             </div>
           </div>
 
-          <div className="shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
             {accounts.google.connected ? (
-              <button
-                type="button"
-                disabled={busyProvider === 'google'}
-                onClick={onDisconnectGoogle}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-300 transition hover:border-red-500/50 hover:text-red-300 disabled:opacity-50"
-              >
-                <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
-                <span>Disconnect</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  disabled={busyProvider !== null}
+                  onClick={onConnectGoogle}
+                  className="inline-flex items-center gap-1 rounded-lg border border-indigo-500/40 bg-indigo-500/15 px-2.5 py-2 text-xs font-medium text-indigo-200 transition hover:bg-indigo-500/25 disabled:opacity-50"
+                >
+                  <span>+ Add Channel</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={busyProvider === 'google'}
+                  onClick={onDisconnectGoogle}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-medium text-slate-300 transition hover:border-red-500/50 hover:text-red-300 disabled:opacity-50"
+                >
+                  <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>Disconnect</span>
+                </button>
+              </>
             ) : (
               <button
                 type="button"

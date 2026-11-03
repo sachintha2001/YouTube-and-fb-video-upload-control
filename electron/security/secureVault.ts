@@ -13,6 +13,10 @@ export interface StoredYouTubeChannel {
   title: string;
   customUrl?: string;
   avatarUrl?: string;
+  email?: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
 }
 
 export interface StoredGoogleAuth {
@@ -244,15 +248,24 @@ export class SecureVault {
     });
   }
 
-  public getFacebookAuth(): StoredFacebookAuth | undefined {
-    return this.readVault().facebookAuth;
-  }
-
-  public setFacebookAuth(auth: StoredFacebookAuth | undefined): void {
+  public upsertGoogleChannel(channel: StoredYouTubeChannel): void {
     const current = this.readVault();
+    const existingChannels = current.googleAuth?.channels || [];
+    const filtered = existingChannels.filter((c) => c.id !== channel.id);
+    const mergedChannels: StoredYouTubeChannel[] = [...filtered, channel];
+
     this.writeVault({
       ...current,
-      facebookAuth: auth,
+      googleAuth: {
+        accessToken: channel.accessToken,
+        refreshToken: channel.refreshToken,
+        expiresAt: channel.expiresAt,
+        email: channel.email,
+        channelId: channel.id,
+        channelTitle: channel.title,
+        avatarUrl: channel.avatarUrl,
+        channels: mergedChannels,
+      },
     });
   }
 
@@ -270,12 +283,28 @@ export class SecureVault {
       ...current,
       googleAuth: {
         ...current.googleAuth,
+        accessToken: found.accessToken || current.googleAuth.accessToken,
+        refreshToken: found.refreshToken || current.googleAuth.refreshToken,
+        expiresAt: found.expiresAt || current.googleAuth.expiresAt,
+        email: found.email || current.googleAuth.email,
         channelId: found.id,
         channelTitle: found.title,
         avatarUrl: found.avatarUrl || current.googleAuth.avatarUrl,
       },
     });
     return this.getSafeAccountsSummary();
+  }
+
+  public getFacebookAuth(): StoredFacebookAuth | undefined {
+    return this.readVault().facebookAuth;
+  }
+
+  public setFacebookAuth(auth: StoredFacebookAuth | undefined): void {
+    const current = this.readVault();
+    this.writeVault({
+      ...current,
+      facebookAuth: auth,
+    });
   }
 
   public selectFacebookPage(pageId: string): ConnectedAccountsState {
