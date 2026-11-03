@@ -1,0 +1,191 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  accent-color: #6366f1;
+  scrollbar-color: #4b5563 #0b0f19;
+  scrollbar-width: thin;
+}
+
+/* Accessible focus outlines across interactive elements */
+:focus-visible {
+  outline: 2px solid #818cf8;
+  outline-offset: 2px;
+}
+
+/* Canonical screen-reader-only utility (preserves accessibility tree unlike display:none) */
+.visually-hidden {
+  position: absolute;
+  clip-path: inset(50%);
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  white-space: nowrap;
+}
+
+/* Modern textarea auto-growing with vertical resize fallback */
+textarea.auto-grow-textarea {
+  field-sizing: content;
+  min-block-size: 6.5rem;
+  max-block-size: 18rem;
+  resize: vertical;
+}
+
+/* Validate only after user interaction (:user-invalid instead of premature :invalid) */
+input:not(input[type='range']):user-invalid,
+textarea:user-invalid,
+select:user-invalid {
+  border-color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.06);
+}
+
+/* Choice cards reacting declaratively to checked child state */
+label.choice-pill {
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+label.choice-pill:has(:checked) {
+  border-color: #6366f1;
+  background-color: rgba(99, 102, 241, 0.14);
+}
+
+/* Dynamic hue-driven native <progress> bar */
+progress.upload-progress-bar {
+  inline-size: 100%;
+  block-size: 0.65rem;
+  border-radius: 9999px;
+  accent-color: hsl(var(--brand-hue, 235) 84% 64%);
+  transition: accent-color 0.25s ease;
+}
+
+/* Native <dialog> modal backdrop styling */
+dialog.studio-dialog::backdrop {
+  background: rgba(3, 7, 18, 0.78);
+  backdrop-filter: blur(4px);
+}
+
+/* ==========================================================================
+   Responsive Semantic Data Tables (@container query + sticky headers)
+   ========================================================================== */
+.table-wrapper {
+  overflow: auto;
+  max-inline-size: 100%;
+  max-block-size: min(460px, 72vh);
+  container-type: inline-size;
+  border-radius: 0.75rem;
+  border: 1px solid #263249;
+  background: #111827;
+}
+
+.studio-table {
+  inline-size: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: start;
+  font-size: 0.875rem;
+}
+
+.studio-table thead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 2;
+  background: #182134;
+}
+
+.studio-table thead th {
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  border-block-end: 1px solid #263249;
+  white-space: nowrap;
+}
+
+.studio-table tbody th {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  background: #111827;
+  padding: 0.875rem 1rem;
+  font-weight: 600;
+  color: #f8fafc;
+  border-block-end: 1px solid #1e293b;
+}
+
+.studio-table tbody td {
+  padding: 0.875rem 1rem;
+  color: #cbd5e1;
+  border-block-end: 1px solid #1e293b;
+  vertical-align: top;
+}
+
+.studio-table tbody tr:hover th,
+.studio-table tbody tr:hover td {
+  background: #162033;
+}
+
+@container (width < 640px) {
+  .studio-table,
+  .studio-table thead,
+  .studio-table tbody,
+  .studio-table tr,
+  .studio-table th,
+  .studio-table td {
+    display: block;
+  }
+
+  .studio-table thead {
+    display: none;
+  }
+
+  .studio-table tbody tr {
+    margin: 0.75rem;
+    border: 1px solid #263249;
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
+
+  .studio-table tbody th {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 2;
+    background: #1a2234;
+    border-block-end: 1px solid #263249;
+  }
+
+  .studio-table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .studio-table tbody td:nth-child(2)::before {
+    content: var(--label-2) ': ';
+    font-weight: 600;
+    color: #94a3b8;
+  }
+
+  .studio-table tbody td:nth-child(3)::before {
+    content: var(--label-3) ': ';
+    font-weight: 600;
+    color: #94a3b8;
+  }
+
+  .studio-table tbody td:nth-child(4)::before {
+    content: var(--label-4) ': ';
+    font-weight: 600;
+    color: #94a3b8;
+  }
+
+  .studio-table tbody td:nth-child(5)::before {
+    content: var(--label-5) ': ';
+    font-weight: 600;
+    color: #94a3b8;
+  }
+}
+

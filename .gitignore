@@ -1,0 +1,14 @@
+node_modules/
+dist/
+dist-electron/
+release/
+.env
+.env.local
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+.DS_Store
+*.vault.json
+client_secret*.json
+credentials*.json
+

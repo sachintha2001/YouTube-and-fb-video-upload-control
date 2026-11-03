@@ -1,0 +1,67 @@
+{
+  "name": "socialstream-studio",
+  "version": "1.0.0",
+  "description": "Cross-platform personal desktop scheduler & resumable video uploader for YouTube and Facebook Pages",
+  "main": "dist-electron/main.js",
+  "private": true,
+  "author": "Desktop App Architect",
+  "scripts": {
+    "dev:renderer": "vite --port 5173 --strictPort",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "watch:electron": "tsc -p tsconfig.electron.json --watch --preserveWatchOutput",
+    "dev:electron": "wait-on tcp:5173 file:dist-electron/main.js && cross-env NODE_ENV=development ELECTRON_RUN_AS_NODE= electron .",
+    "dev": "npm run build:electron && concurrently -k -n RENDERER,MAIN_TSC,ELECTRON \"npm run dev:renderer\" \"npm run watch:electron\" \"npm run dev:electron\"",
+    "build": "tsc -p tsconfig.json --noEmit && vite build && npm run build:electron",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "lucide-react": "^0.475.0",
+    "node-cron": "^3.0.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "@types/node-cron": "^3.0.11",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^45.2.1",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.0",
+    "wait-on": "^8.0.2"
+  },
+  "build": {
+    "appId": "com.personal.socialstreamstudio",
+    "productName": "SocialStream Studio",
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.video",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
